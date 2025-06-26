@@ -1,20 +1,21 @@
-// src/main/java/com/socratesadvice/kata/lunarcalapidemo/controller/ProductController.java
-package com.socratesadvice.kata.lunarcalapidemo.controller; // <-- IMPORTANT: Adjust this package
+package com.socratesadvice.kata.lunarcalapidemo.controller;
 
-import com.socratesadvice.kata.lunarcalapidemo.model.Product; // <-- IMPORTANT: Adjust this import
-import com.socratesadvice.kata.lunarcalapidemo.service.ProductService; // <-- IMPORTANT: Adjust this import
+import com.socratesadvice.kata.lunarcalapidemo.model.Product;
+import com.socratesadvice.kata.lunarcalapidemo.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
-@RestController // Marks this class as a REST controller
-@RequestMapping("/api/calendar-entries") // Base URL for all calendar entry-related endpoints
-public class ProductController { // You might consider renaming this to LunarCalendarEntryController for clarity
+@RestController
+@RequestMapping("/api/calendar-entries")
+@CrossOrigin(origins = "http://localhost:5173") // Allow requests from your React app's origin
+public class ProductController {
 
-    @Autowired // Injects the ProductService
+    @Autowired
     private ProductService productService;
 
     // CREATE a new calendar entry
@@ -22,15 +23,22 @@ public class ProductController { // You might consider renaming this to LunarCal
     @PostMapping
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
         Product createdProduct = productService.createProduct(product);
-        return new ResponseEntity<>(createdProduct, HttpStatus.CREATED); // 201 Created
+        return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
     }
 
-    // READ all calendar entries
-    // GET http://localhost:8080/api/calendar-entries
+    // READ calendar entries
+    // GET http://localhost:8080/api/calendar-entries (gets all)
+    // GET http://localhost:8080/api/calendar-entries?userId={yourUserID} (gets by user)
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
-        return new ResponseEntity<>(products, HttpStatus.OK); // 200 OK
+    public ResponseEntity<List<Product>> getCalendarEntries(
+            @RequestParam(required = false) String userId) { // 'userId' parameter is optional
+        List<Product> products;
+        if (userId != null && !userId.trim().isEmpty()) { // Check if userId parameter is provided and not empty
+            products = productService.getProductsByUserId(userId);
+        } else {
+            products = productService.getAllProducts(); // If no userId, return all (as per your original method)
+        }
+        return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
     // READ a calendar entry by ID
@@ -38,8 +46,8 @@ public class ProductController { // You might consider renaming this to LunarCal
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable String id) {
         return productService.getProductById(id)
-                .map(product -> new ResponseEntity<>(product, HttpStatus.OK)) // 200 OK if found
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND)); // 404 Not Found if not found
+                .map(product -> new ResponseEntity<>(product, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     // UPDATE an existing calendar entry
@@ -48,10 +56,11 @@ public class ProductController { // You might consider renaming this to LunarCal
     public ResponseEntity<Product> updateProduct(@PathVariable String id, @RequestBody Product productDetails) {
         try {
             Product updatedProduct = productService.updateProduct(id, productDetails);
-            return new ResponseEntity<>(updatedProduct, HttpStatus.OK); // 200 OK
+            return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
         } catch (RuntimeException e) {
-            // In a real application, you'd handle specific exceptions (e.g., NotFoundException)
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404 Not Found
+            // Log the exception for debugging on the server side
+            System.err.println("Error updating product with ID " + id + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 

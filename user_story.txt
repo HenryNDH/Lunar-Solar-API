@@ -1,0 +1,7 @@
+As a user I want to input a lunar date and, it will convert to solar date.
+As a user I want to save the converted date with notes.
+As a user I want to see all of my saved event in asc order.
+
+20 10 cal.year
+30 10 2025 Solar
+

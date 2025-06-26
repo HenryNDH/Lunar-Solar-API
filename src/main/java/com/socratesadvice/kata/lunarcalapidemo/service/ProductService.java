@@ -29,6 +29,12 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
+    // READ by User ID (NEW METHOD)
+    public List<Product> getProductsByUserId(String userId) {
+        // This method relies on the `findByUserId` method being added to ProductRepository
+        return productRepository.findByUserId(userId);
+    }
+
     // UPDATE
     public Product updateProduct(String id, Product productDetails) {
         Optional<Product> optionalProduct = productRepository.findById(id);
@@ -36,8 +42,9 @@ public class ProductService {
             Product existingProduct = optionalProduct.get();
             existingProduct.setDay(productDetails.getDay());
             existingProduct.setMonth(productDetails.getMonth());
-            existingProduct.setYear(productDetails.getYear());
             existingProduct.setDesc(productDetails.getDesc());
+            // Make sure to update the userId field as well, if it's meant to be mutable
+            existingProduct.setUserId(productDetails.getUserId());
             return productRepository.save(existingProduct);
         } else {
             throw new RuntimeException("Product not found with id: " + id);
